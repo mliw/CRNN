@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+import random
 import math
 import tensorflow as tf
 from crnn_tools import libs
@@ -57,14 +58,16 @@ class DataGenerator(tf.keras.utils.Sequence):
         #         result.append([img,label])
         # except KeyboardInterrupt:
         #       t.close()
-        
-        for name in self.datas[batch_index]:
+        name_list = list(self.datas[batch_index])
+        name_list = sorted(name_list)
+        for name in name_list:
             img = cv2.imread(name)
             if np.random.randint(0, 100) > 50:
                 img = 255-img
             label = libs.total_dic[name.split("/")[-1]]
             result.append([img,label])
-                
+        random.shuffle(result) 
+            
         parsered_result = parser(result)
         input_length = np.array([config.WIDTH-2]*parsered_result[0].shape[0])
         input_length = input_length.reshape(-1,1)
