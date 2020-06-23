@@ -5,6 +5,7 @@ from tensorflow.keras import layers
 from tensorflow.keras import backend as K
 from crnn_tools import config
 from crnn_tools import libs
+import cv2
 import warnings
 warnings.filterwarnings("ignore")
 CLASS_NUM = 5990
@@ -14,10 +15,6 @@ def ctc_lambda_func(args):
     labels, y_pred, input_length, label_length = args
     y_pred = y_pred[:, 2:, :]
     return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
-
-
-def cut_top_2(y_pred):
-    return  y_pred[:, 2:, :]
 
 
 def my_custom_loss(y_true, y_pred):
@@ -31,6 +28,20 @@ def translate(pre):
     result = [''.join(tem_list[items]) for items in pre]
     return result
 
+  
+def load_picture(path):
+    img = cv2.imread(path)
+    h,w,_ = img.shape
+    if h!=32:
+        ratio = 32/h
+        w_new = w*ratio
+        w_new = np.floor(w_new) if w_new-np.floor(w_new)<=np.floor(w_new)+1-w_new else np.floor(w_new)+1
+        w_new = int(w_new)
+        img = cv2.resize(img,(w_new,32),interpolation=cv2.INTER_CUBIC)
+    img_gray = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
+    img_gray = np.expand_dims(img_gray,axis=2)
+    return np.array([img_gray],dtype=np.float32)
+    
     
 class CRNN:
 
@@ -128,6 +139,8 @@ class CRNN:
 
     def _load_weights(self,path):
         self.train_core.load_weights(path)
-        
+        output = self.train_core.get_layer("blstm2_out").output
+        img_input = self.train_core.input[0]
+        self.predict_core = Model(img_input,output)  
 
 
