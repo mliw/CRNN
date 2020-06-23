@@ -14,14 +14,12 @@ if __name__ == '__main__':
     # 0 Load pre-train weight
     from crnn_tools.core import CRNN
     train_model = CRNN()   
-    train_model._load_weights("weights/rd_5.h5")
-    
     
     # 2 Begin training
     for i in range(10):
         dll = DataGenerator(data_loader.TRAIN_LIST,5000) 
         it_dll = iter(dll)
-        j = i+6
+        j = i
         lr = (1e-3)*(0.995)**j
         sgd = SGD(lr=lr)
         train_model._compile_net(sgd)
