@@ -13,7 +13,6 @@ CLASS_NUM = 5990
 
 def ctc_lambda_func(args):
     labels, y_pred, input_length, label_length = args
-    y_pred = y_pred[:, 2:, :]
     return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
 
 

@@ -69,7 +69,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         random.shuffle(result) 
             
         parsered_result = parser(result)
-        input_length = np.array([config.WIDTH-2]*parsered_result[0].shape[0])
+        input_length = np.array([config.WIDTH]*parsered_result[0].shape[0])
         input_length = input_length.reshape(-1,1)
         label_length = np.array([config.LABEL_LENGTH]*parsered_result[0].shape[0])
         label_length = label_length.reshape(-1,1)
