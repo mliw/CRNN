@@ -1,5 +1,4 @@
 import tensorflow as tf
-import os
 import numpy as np
 from crnn_tools.data_loader import DataGenerator
 from crnn_tools import data_loader
@@ -7,9 +6,6 @@ from tensorflow.keras.optimizers import SGD
 import warnings
 warnings.filterwarnings("ignore")
 gpus = tf.config.list_physical_devices(device_type='GPU')
-# tf.config.set_logical_device_configuration(
-#     gpus[0],
-#     [tf.config.LogicalDeviceConfiguration(memory_limit=7168)]) 
 tf.config.experimental.set_memory_growth(gpus[0], True)
 
 
@@ -18,7 +14,7 @@ if __name__ == '__main__':
     # 0 Load pre-train weight
     from crnn_tools.core import CRNN
     train_model = CRNN() 
-    train_model._load_weights("weights/rd_2.h5")
+    #train_model._load_weights("weights/rd_2.h5")
     
    
     # 1 Begin training    

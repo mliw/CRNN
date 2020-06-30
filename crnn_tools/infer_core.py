@@ -4,7 +4,7 @@ from tensorflow.keras import Model
 from tensorflow.keras import layers 
 from tensorflow.keras import backend as K
 from crnn_tools import config
-import matplotlib.pyplot as plt
+import time
 import cv2
 import warnings
 warnings.filterwarnings("ignore")
@@ -53,7 +53,7 @@ def cut(img_gray):
     last_point = np.where(last_pos==-1)[0]-1
     
     spaces = np.column_stack((first_point,last_point))
-    intervals = spaces[(spaces[:,1]-spaces[:,0])>=5,:]
+    intervals = spaces[(spaces[:,1]-spaces[:,0])>=THRESHOLD,:]
     results = []
     for interval in intervals:
         if interval[0]!=0 and interval[1]!=img_gray.shape[1]-1:
@@ -93,12 +93,16 @@ def load_picture(path):
     
     # for middle in mid_combined:
     #     cv2.line(img_gray,(middle,0),(middle,img_gray.shape[0]-1),(255,0,0),1)
-    # Image.fromarray(img_gray) 
+    # Image.fromarray(img_gray)
+    
+    result = []
     for i in range(len(mid_combined)-1):
         interval_img = img_gray[:,mid_combined[i]:mid_combined[i+1]]
-        Image.fromarray(interval_img) 
-       
-    return np.array([img_gray],dtype=np.float32)
+        interval_img = np.expand_dims(interval_img,axis = 2)
+        interval_img = np.array([interval_img],dtype=np.float32)
+        result.append(interval_img)
+    
+    return result,img_gray
     
     
 class CRNN:
@@ -113,7 +117,7 @@ class CRNN:
         labels = tf.keras.Input(name='the_labels',shape=[config.LABEL_LENGTH], dtype='float32')
         input_length = tf.keras.Input(name='input_length', shape=[1], dtype='int64')
         label_length = tf.keras.Input(name='label_length', shape=[1], dtype='int64')
-        vgg_input = tf.keras.Input(shape=(32,None,1),name='vgg_input')
+        vgg_input = tf.keras.Input(shape=(32,None,1),name='vgg_input', dtype='float32')
         
         # None stands for batch_size 
         # Vgg filters=64 input_shape (None,32,280,1) output_shape (None,16,140,64)
@@ -160,17 +164,34 @@ class CRNN:
     def _compile_net(self,opt):
         self.train_core.compile(loss={'ctc': lambda y_true, y_pred: y_pred},optimizer=opt)
         
+    
+    def predict_path(self,path):
+        a1 = time.time()
+        pieces = load_picture(path)[0]
+        final =[]
+        for piece in pieces:
+            final.append(self.predict_and_translate(piece)[0])
+        a2 = time.time()
+        timing = np.round(a2-a1,3)
+        print("="*90)
+        print("file_path is:{}".format(path))
+        print("result is:"+" ".join(final))
+        print("elapsed time is:{}s".format(timing))
+        print("="*90)
+        return " ".join(final)
+    
         
-    def predict_and_translate(self,path):
-        test_data = load_picture(path)
-        pre = self.predict_core.predict(test_data)
+    def predict_and_translate(self,test_data):
+        import warnings
+        warnings.filterwarnings("ignore")
+        pre = self.predict_core(tf.constant(test_data))
         seq_length = pre.shape[1]
         batch_size = pre.shape[0]
         sequence_length = np.ones(batch_size)*seq_length
         sequence_length = sequence_length.astype(np.int32)
-        result = K.ctc_decode(pre, sequence_length, greedy=True)        
+        result = K.ctc_decode(tf.constant(pre), sequence_length, greedy=True)  
         return translate(result[0][0].numpy())   
-
+    
 
     def _load_weights(self,path):
         self.train_core.load_weights(path)
