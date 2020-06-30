@@ -48,16 +48,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         batch_index = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]  
         result = []
         
-        # try:
-        #   with tqdm(self.datas[batch_index]) as t:
-        #     for name in t:
-        #         img = cv2.imread(name)
-        #         if np.random.randint(0, 100) > 50:
-        #             img = 255-img
-        #         label = libs.total_dic[name.split("/")[-1]]
-        #         result.append([img,label])
-        # except KeyboardInterrupt:
-        #       t.close()
         name_list = list(self.datas[batch_index])
         name_list = sorted(name_list)
         for name in name_list:
