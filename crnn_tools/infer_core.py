@@ -24,6 +24,22 @@ def ctc_lambda_func(args):
     return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
 
 
+def add_color(interval_img,mode=1):
+    if mode==0: # Add left
+        left_color = int(np.median(interval_img[:,0]))
+        return_pic = left_color*np.ones((interval_img.shape[0],interval_img.shape[1]+8))
+        return_pic[0:interval_img.shape[0],-interval_img.shape[1]:]=interval_img
+        return_pic = return_pic.astype(interval_img.dtype)
+        return return_pic
+
+    elif mode==1: # Add right
+        right_color = int(np.median(interval_img[:,-1]))
+        return_pic = right_color*np.ones((interval_img.shape[0],interval_img.shape[1]+32))
+        return_pic[0:interval_img.shape[0],0:interval_img.shape[1]]=interval_img
+        return_pic = return_pic.astype(interval_img.dtype)
+        return return_pic
+    
+    
 def my_custom_loss(y_true, y_pred):
     return K.mean(y_pred)
 
@@ -37,7 +53,6 @@ def translate(pre):
 
   
 def cut(img_gray):
- 
     blur = cv2.GaussianBlur(img_gray,(3,3),0)
     ret3,img_black = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     columns = np.sum(img_black,axis = 0)
@@ -59,7 +74,7 @@ def cut(img_gray):
         if interval[0]!=0 and interval[1]!=img_gray.shape[1]-1:
             results.append(interval)
 
-    middles = [(result[0]+result[1])//2 for result in results]
+    middles = [(result[0]+result[1])//2+1 for result in results]
     
     # for middle in middles:
     #     cv2.line(img_black,(middle,0),(middle,img_black.shape[0]-1),(255,0,0),1)
@@ -98,6 +113,7 @@ def load_picture(path):
     result = []
     for i in range(len(mid_combined)-1):
         interval_img = img_gray[:,mid_combined[i]:mid_combined[i+1]]
+        interval_img = add_color(interval_img)
         interval_img = np.expand_dims(interval_img,axis = 2)
         interval_img = np.array([interval_img],dtype=np.float32)
         result.append(interval_img)
@@ -178,12 +194,11 @@ class CRNN:
         print("result is:"+" ".join(final))
         print("elapsed time is:{}s".format(timing))
         print("="*90)
+        print("")
         return " ".join(final)
     
         
     def predict_and_translate(self,test_data):
-        import warnings
-        warnings.filterwarnings("ignore")
         pre = self.predict_core(tf.constant(test_data))
         seq_length = pre.shape[1]
         batch_size = pre.shape[0]
